@@ -44,6 +44,32 @@ The provided sample shows how the winning team and the final score for a specifi
 | [Agent_Execute_GroupChat](./src/Agent_Execute_GroupChat.ipynb) | A polyglot notebook which creates and executes the Agent group chat | The notebook uses c# to highlight the functionality. Because Semantic Kernel supports Python and Java as well porting to one of those languages is easily possible |
 | [Process_Execute_ProcessSteps](./src/Process_Execute_ProcessSteps.ipynb) | A polyglot notebook which creates and executes the Process flow | The notebook uses c# to highlight the functionality. Because Semantic Kernel supports Python and Java as well porting to one of those languages is easily possible |
 
+### Agent Group Chat
+
+The [Agent Group Chat Notebook](./src/Agent_Execute_GroupChat.ipynb) defines two Agents:
+
+- the "Retrieve Winner Agent" and
+- the "Retrieve Score Agent"
+
+Both Agents are tasked with determining *"Who won the Super Sports Championship 2025"*, a fictional sport event with no available internet data. 
+This setup highlights how private data can be leveraged to empower the agents. Consequently, both agents use LLM function calling to identify and execute local functions to retrieve the necessary information to answer the task.
+
+![Group Chat Overview](./media/img/GroupChat_Overview.png)
+
+As the name indicates, the "Retrieve Winner Agent" will retrieve the winner of the sport event, while the "Retrieve Score Agent" will retrieve the final score.
+
+### Process Flow
+
+The [Process Flow Notebook](./src/Process_Execute_ProcessSteps.ipynb) defines two process steps with one supporting process step:
+
+- `retrieveWinnerProcessStep`: Defines the functionality to retrieve the winner of the sport event. 
+- `retrieveScoreProcessStep`: Defines the functionality to retrieve the score of the sport event.
+- `storeResultProcessStep`: Acts as supporting process step which can store winner and score and will finally show the result of the process flow.
+
+All three steps are defined as classes with class functions, uses Semantic Kernel and the function calling possibilities of the deployed OpenAI GPT-4o model to identify and execute local functions.
+
+![Overview](./media/img/Process_Overview.png)
+
 ## Summary
 
 With the rise of LLMs and SLMs, developers prioritize AI enrichment of legacy and business applications.

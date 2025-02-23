@@ -1,0 +1,105 @@
+# Check if you are already logged in
+$loggedIn = az account show --query "name" -o tsv
+
+if ($loggedIn -ne $null) {
+    Write-Host "Already logged in as $loggedIn"
+} else {
+    Write-Host "Logging in..."
+    az login
+}
+
+# Retrieve default subscription id
+$subscriptionId = (
+    (
+        az account list -o json `
+            --query "[?isDefault]"
+    ) | ConvertFrom-Json
+).id
+
+# Set Subscription
+az account set --subscription $subscriptionId
+Write-Host "Subscription set to $subscriptionId"
+
+# Define Project Unifier
+$random = Get-Random -Minimum 100 -Maximum 999
+Write-Host "Unifier set to: $random"
+
+# Create Resource Group
+$resourceGroup = "AzureAI.Process"
+$location = "eastus2"
+
+az group create `
+    --location $location `
+    --resource-group $resourceGroup
+
+
+# Create Azure OpenAI Account
+$csOpenAIName = "WS_AOAI_$random"
+
+az cognitiveservices account create `
+    --name $csOpenAIName `
+    --resource-group $resourceGroup `
+    --location $location `
+    --kind OpenAI `
+    --sku S0 `
+    --yes
+
+$csOpenAIId = ( `
+    az cognitiveservices account show `
+        --name $csOpenAIName `
+        --resource-group $resourceGroup `
+        --query id `
+        --output tsv `
+)
+
+$csOpenAIEndpoint = ( `
+    az cognitiveservices account show `
+        --name $csOpenAIName `
+        --resource-group $resourceGroup `
+        --query properties.endpoint `
+        --output tsv `
+)
+
+$csOpenAIApiKey = (
+    az cognitiveservices account keys list `
+        --name $csOpenAIName `
+        --resource-group $resourceGroup `
+        --query key1 `
+        --output tsv `
+)
+
+# Chat Completion Model
+$modelChatCompletionDeploymentName = "gpt-4o"
+$modelName = "gpt-4o"
+$modelVersion = "2024-05-13"
+$modelFormat = "OpenAI"
+$scaleType = "Standard"
+
+az cognitiveservices account deployment create `
+   --resource-group $resourceGroup `
+   --name $csOpenAIName `
+   --deployment-name $modelChatCompletionDeploymentName `
+   --model-name $modelName `
+   --model-version $modelVersion `
+   --model-format $modelFormat `
+   --sku-name $scaleType `
+   --sku-capacity 1
+
+# Store configuration 
+$configurationFile = "./config/config.env"
+New-Item -Name $configurationFile -ItemType File -Force
+
+
+function Set-ConfigurationFileVariable($configurationFile, $variableName, $variableValue) {
+    if (Select-String -Path $configurationFile -Pattern $variableName) {
+        (Get-Content $configurationFile) | Foreach-Object {
+            $_ -replace "$variableName = .*", "$variableName = $variableValue"
+        } | Set-Content $configurationFile
+    } else {
+        Add-Content -Path $configurationFile -value "$variableName = $variableValue"
+    }
+}
+
+Set-ConfigurationFileVariable $configurationFile "SK_OPENAI_APIKEY" $csOpenAIApiKey
+Set-ConfigurationFileVariable $configurationFile "SK_OPENAI_ENDPOINT" $csOpenAIEndpoint
+Set-ConfigurationFileVariable $configurationFile "SK_CHATCOMPLETION_DEPLOYMENT_DEFAULT" $modelChatCompletionDeploymentName
